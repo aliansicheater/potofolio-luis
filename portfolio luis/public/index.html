@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luis Ismail, S.Tr.Kom — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0a0c12;
+      --paper: #f5f2eb;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --slate: #1e2436;
+      --muted: #7a7f8e;
+      --accent: #3a7bd5;
+      --accent2: #5a4fcf;
+      --glow: rgba(201,168,76,0.18);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--ink);
+      color: var(--paper);
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ── CUSTOM CURSOR ── */
+    #cursor {
+      position: fixed; top: 0; left: 0; z-index: 9999;
+      pointer-events: none;
+      mix-blend-mode: difference;
+    }
+    #cursor .dot {
+      width: 8px; height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      transition: transform 0.08s ease;
+    }
+    #cursor .ring {
+      width: 36px; height: 36px;
+      border: 1.5px solid var(--gold);
+      border-radius: 50%;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      transition: transform 0.18s cubic-bezier(0.23,1,0.32,1), width 0.2s, height 0.2s, opacity 0.2s;
+    }
+    body.hovering #cursor .ring { width: 54px; height: 54px; opacity: 0.5; }
+
+    /* ── WEBGL CANVAS ── */
+    #gl-canvas {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── LOADER ── */
+    #loader {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--ink);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 24px;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    #loader.hidden { opacity: 0; visibility: hidden; }
+    .loader-name {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--paper);
+      overflow: hidden;
+    }
+    .loader-name span {
+      display: inline-block;
+      transform: translateY(100%);
+      animation: slideUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards;
+    }
+    .loader-bar-wrap {
+      width: 200px; height: 2px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .loader-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--gold), var(--accent));
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    .loader-pct {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+
+    @keyframes slideUp {
+      to { transform: translateY(0); }
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 48px;
+      background: linear-gradient(to bottom, rgba(10,12,18,0.9) 0%, transparent 100%);
+      backdrop-filter: blur(2px);
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+      color: var(--paper);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--gold); }
+    .nav-links {
+      display: flex; gap: 36px; list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute; bottom: -4px; left: 0; right: 0;
+      height: 1px; background: var(--gold);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s cubic-bezier(0.23,1,0.32,1);
+    }
+    .nav-links a:hover { color: var(--paper); }
+    .nav-links a:hover::after { transform: scaleX(1); }
+
+    /* ── MAIN LAYOUT ── */
+    main { position: relative; z-index: 1; }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 120px 48px 80px;
+      gap: 80px;
+      position: relative;
+    }
+    .hero-text { max-width: 600px; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 28px;
+      opacity: 0; animation: fadeIn 0.6s ease 1.4s forwards;
+    }
+    .hero-tag::before {
+      content: ''; width: 32px; height: 1px; background: var(--gold);
+    }
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.8rem, 5vw, 5rem);
+      font-weight: 800;
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      color: var(--paper);
+      margin-bottom: 16px;
+      opacity: 0; animation: fadeSlideUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.5s forwards;
+    }
+    .hero-title .gold { color: var(--gold); }
+    .hero-subtitle {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
+      opacity: 0; animation: fadeSlideUp 0.8s ease 1.65s forwards;
+    }
+    .hero-nip {
+      font-size: 0.75rem; letter-spacing: 0.15em;
+      color: rgba(122,127,142,0.6);
+      font-family: 'DM Sans', monospace;
+      margin-bottom: 36px;
+      opacity: 0; animation: fadeSlideUp 0.8s ease 1.8s forwards;
+    }
+    .hero-desc {
+      font-size: 1rem; line-height: 1.8;
+      color: rgba(245,242,235,0.7);
+      margin-bottom: 44px;
+      max-width: 480px;
+      opacity: 0; animation: fadeSlideUp 0.8s ease 1.95s forwards;
+    }
+    .hero-cta {
+      display: flex; gap: 16px;
+      opacity: 0; animation: fadeSlideUp 0.8s ease 2.1s forwards;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 28px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 500;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: all 0.25s ease;
+      cursor: none;
+    }
+    .btn-primary {
+      background: var(--gold);
+      color: var(--ink);
+    }
+    .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(201,168,76,0.3); }
+    .btn-ghost {
+      border: 1px solid rgba(245,242,235,0.2);
+      color: var(--paper);
+    }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
+
+    /* Hero Photo */
+    .hero-visual {
+      display: flex; justify-content: center; align-items: center;
+      position: relative;
+      opacity: 0; animation: fadeIn 1s ease 2s forwards;
+    }
+    .photo-frame {
+      position: relative;
+      width: 380px; height: 480px;
+    }
+    .photo-frame::before {
+      content: '';
+      position: absolute; inset: -2px;
+      background: linear-gradient(135deg, var(--gold), var(--accent), var(--accent2));
+      border-radius: 16px;
+      z-index: 0;
+    }
+    .photo-frame::after {
+      content: '';
+      position: absolute; top: 24px; left: 24px; right: -16px; bottom: -16px;
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 16px;
+      z-index: -1;
+    }
+    .photo-frame img {
+      position: relative; z-index: 1;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      border-radius: 14px;
+      display: block;
+      filter: grayscale(10%);
+      transition: filter 0.4s ease;
+    }
+    .photo-frame:hover img { filter: grayscale(0%); }
+
+    .photo-badge {
+      position: absolute; bottom: -20px; right: -20px; z-index: 2;
+      background: var(--slate);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 12px;
+      padding: 14px 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .photo-badge .label { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .photo-badge .value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--gold); }
+
+    /* ── SECTION COMMON ── */
+    section {
+      padding: 100px 48px;
+      position: relative;
+    }
+    .section-header {
+      display: flex; align-items: center; gap: 20px;
+      margin-bottom: 64px;
+    }
+    .section-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem; letter-spacing: 0.3em;
+      color: var(--gold); opacity: 0.6;
+    }
+    .section-line { flex: 1; max-width: 80px; height: 1px; background: var(--gold); opacity: 0.3; }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--paper);
+    }
+
+    /* ── EXPERIENCE ── */
+    #experience { background: linear-gradient(180deg, transparent 0%, rgba(30,36,54,0.4) 100%); }
+
+    .timeline {
+      position: relative;
+      padding-left: 40px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute; left: 0; top: 8px; bottom: 8px;
+      width: 1px;
+      background: linear-gradient(180deg, var(--gold) 0%, var(--accent) 50%, transparent 100%);
+      opacity: 0.3;
+    }
+    .tl-item {
+      position: relative;
+      margin-bottom: 48px;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1);
+    }
+    .tl-item.visible { opacity: 1; transform: translateX(0); }
+    .tl-item::before {
+      content: '';
+      position: absolute; left: -46px; top: 8px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 0 4px rgba(201,168,76,0.15), 0 0 20px rgba(201,168,76,0.3);
+    }
+    .tl-year {
+      font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 6px;
+    }
+    .tl-role {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem; font-weight: 700;
+      color: var(--paper); margin-bottom: 4px;
+    }
+    .tl-org {
+      font-size: 0.9rem; color: var(--muted);
+    }
+    .tl-type {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 3px 10px;
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 20px;
+      font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    /* ── EDUCATION ── */
+    #education { background: rgba(30,36,54,0.3); }
+    .edu-card {
+      display: flex; align-items: flex-start; gap: 24px;
+      background: rgba(30,36,54,0.6);
+      border: 1px solid rgba(201,168,76,0.1);
+      border-radius: 16px;
+      padding: 32px 36px;
+      max-width: 600px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.3s, transform 0.3s;
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1), border-color 0.3s;
+    }
+    .edu-card.visible { opacity: 1; transform: translateY(0); }
+    .edu-card:hover { border-color: rgba(201,168,76,0.4); }
+    .edu-icon {
+      width: 52px; height: 52px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--gold), var(--accent));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .edu-degree {
+      font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700;
+      color: var(--paper); margin-bottom: 6px;
+    }
+    .edu-major { font-size: 0.9rem; color: var(--gold); margin-bottom: 4px; }
+    .edu-level { font-size: 0.8rem; color: var(--muted); }
+
+    /* ── CERTIFICATIONS ── */
+    #certifications { }
+    .cert-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .cert-card {
+      background: rgba(30,36,54,0.7);
+      border: 1px solid rgba(58,123,213,0.2);
+      border-radius: 16px;
+      padding: 28px 32px;
+      display: flex; align-items: flex-start; gap: 20px;
+      backdrop-filter: blur(10px);
+      cursor: none;
+      transition: all 0.3s ease;
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s, box-shadow 0.3s;
+      text-decoration: none;
+    }
+    .cert-card.visible { opacity: 1; transform: translateY(0); }
+    .cert-card:hover {
+      border-color: rgba(58,123,213,0.5);
+      box-shadow: 0 20px 60px rgba(58,123,213,0.15);
+      transform: translateY(-4px) !important;
+    }
+    .cert-logo {
+      width: 48px; height: 48px; flex-shrink: 0;
+      border-radius: 10px;
+      background: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      overflow: hidden;
+    }
+    .cert-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .cert-issuer { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+    .cert-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--paper); margin-bottom: 8px; }
+    .cert-meta { font-size: 0.8rem; color: var(--muted); }
+    .cert-valid {
+      display: inline-block; margin-top: 10px;
+      padding: 4px 12px; border-radius: 20px;
+      background: rgba(58,123,213,0.15); border: 1px solid rgba(58,123,213,0.3);
+      font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    /* ── CERT MODAL ── */
+    #cert-modal {
+      display: none;
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(10,12,18,0.95);
+      backdrop-filter: blur(12px);
+      align-items: center; justify-content: center;
+      padding: 40px;
+    }
+    #cert-modal.open { display: flex; }
+    .modal-inner {
+      background: var(--slate);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 700px; width: 100%;
+      position: relative;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 20px;
+      background: none; border: none;
+      color: var(--muted); font-size: 1.4rem;
+      cursor: none; transition: color 0.2s;
+    }
+    .modal-close:hover { color: var(--paper); }
+    .modal-inner iframe {
+      width: 100%; height: 500px;
+      border: none; border-radius: 10px;
+      margin-top: 8px;
+    }
+
+    /* ── CONTACT ── */
+    #contact { background: linear-gradient(180deg, rgba(30,36,54,0.3) 0%, transparent 100%); }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .contact-text h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem; font-weight: 800;
+      color: var(--paper); margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .contact-text p { color: var(--muted); line-height: 1.8; margin-bottom: 32px; }
+    .contact-photo {
+      position: relative; border-radius: 16px; overflow: hidden;
+      height: 320px;
+    }
+    .contact-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+    }
+    .contact-items { display: flex; flex-direction: column; gap: 16px; }
+    .contact-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 20px;
+      background: rgba(30,36,54,0.6);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      transition: border-color 0.2s;
+    }
+    .contact-item:hover { border-color: rgba(201,168,76,0.3); }
+    .ci-icon {
+      width: 40px; height: 40px; flex-shrink: 0;
+      background: rgba(201,168,76,0.1);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .ci-label { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+    .ci-value { font-size: 0.9rem; color: var(--paper); font-family: 'DM Sans', sans-serif; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 32px 48px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; z-index: 1;
+    }
+    footer p { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.05em; }
+    .footer-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800; font-size: 0.9rem;
+      color: var(--paper);
+    }
+    .footer-logo span { color: var(--gold); }
+
+    /* ── SCROLL REVEAL ── */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav { padding: 20px 24px; }
+      .nav-links { display: none; }
+      #hero { grid-template-columns: 1fr; padding: 100px 24px 60px; text-align: center; }
+      .hero-visual { display: none; }
+      section { padding: 80px 24px; }
+      .contact-grid { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── CUSTOM CURSOR ── -->
+<div id="cursor">
+  <div class="dot"></div>
+  <div class="ring"></div>
+</div>
+
+<!-- ── WEBGL CANVAS ── -->
+<canvas id="gl-canvas"></canvas>
+
+<!-- ── LOADER ── -->
+<div id="loader">
+  <div class="loader-name"><span>LUIS ISMAIL</span></div>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="loader-bar"></div></div>
+  <div class="loader-pct" id="loader-pct">0%</div>
+</div>
+
+<!-- ── NAV ── -->
+<nav>
+  <a class="nav-logo" href="#"><span>LI</span>.portfolio</a>
+  <ul class="nav-links">
+    <li><a href="#experience">Pengalaman</a></li>
+    <li><a href="#education">Pendidikan</a></li>
+    <li><a href="#certifications">Sertifikasi</a></li>
+    <li><a href="#contact">Kontak</a></li>
+  </ul>
+</nav>
+
+<!-- ── MAIN ── -->
+<main>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-text">
+      <div class="hero-tag">ASN · Operator TIK · Pendidikan</div>
+      <h1 class="hero-title">Luis<br><span class="gold">Ismail</span><br>S.Tr.Kom</h1>
+      <p class="hero-subtitle">Aparatur Sipil Negara — SD Negeri 001 Gunung Sari</p>
+      <p class="hero-nip">NIP 199609082025211001</p>
+      <p class="hero-desc">
+        Profesional teknologi informasi di sektor pendidikan, berdedikasi mengintegrasikan solusi digital inovatif untuk menciptakan lingkungan belajar yang lebih cerdas dan adaptif.
+      </p>
+      <div class="hero-cta">
+        <a href="#contact" class="btn btn-primary">Hubungi Saya</a>
+        <a href="#experience" class="btn btn-ghost">Lihat Pengalaman</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="photo-frame">
+        <img src="photo.jpg" alt="Luis Ismail" loading="eager" />
+      </div>
+      <div class="photo-badge">
+        <div class="label">Aktif sejak</div>
+        <div class="value">2022</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <div class="section-line"></div>
+      <h2 class="section-title">Pengalaman</h2>
+    </div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-year">2022 — Sekarang</div>
+        <div class="tl-role">Operator TIK / Tenaga Kependidikan</div>
+        <div class="tl-org">SD Negeri 001 Gunung Sari, Berau</div>
+        <span class="tl-type">ASN · Aktif</span>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2022</div>
+        <div class="tl-role">Staff SDM Panwaslu</div>
+        <div class="tl-org">Panitia Pengawas Pemilu Kecamatan Segah</div>
+        <span class="tl-type">Penyelenggara Pemilu</span>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2019</div>
+        <div class="tl-role">Staff SDM Panwaslu</div>
+        <div class="tl-org">Panitia Pengawas Pemilu Kecamatan Segah</div>
+        <span class="tl-type">Penyelenggara Pemilu</span>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2019</div>
+        <div class="tl-role">Magang — Dinas Pendidikan</div>
+        <div class="tl-org">Dinas Pendidikan dan Kebudayaan Kota Samarinda</div>
+        <span class="tl-type">Internship</span>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2014</div>
+        <div class="tl-role">Magang — IT & Sistem Informasi</div>
+        <div class="tl-org">PT Malindomas Perkebunan</div>
+        <span class="tl-type">Internship</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section id="education">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <div class="section-line"></div>
+      <h2 class="section-title">Pendidikan</h2>
+    </div>
+    <div class="edu-card">
+      <div class="edu-icon">🎓</div>
+      <div>
+        <div class="edu-degree">D-IV Teknologi Rekayasa Perangkat Lunak</div>
+        <div class="edu-major">Software Engineering Technology</div>
+        <div class="edu-level">Diploma IV · Sarjana Terapan Komputer</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CERTIFICATIONS -->
+  <section id="certifications">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <div class="section-line"></div>
+      <h2 class="section-title">Sertifikasi</h2>
+    </div>
+    <div class="cert-grid">
+      <a class="cert-card" id="cert-google" href="#" onclick="openCertModal(event)">
+        <div class="cert-logo">
+          <img src="https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png" alt="Google" onerror="this.parentNode.textContent='G'" />
+        </div>
+        <div>
+          <div class="cert-issuer">Google for Education</div>
+          <div class="cert-name">Pendidik Tersertifikasi Gemini</div>
+          <div class="cert-meta">Certified Educator · AI in Education</div>
+          <div class="cert-valid">Berlaku hingga 24/05/2029</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <div class="section-line"></div>
+      <h2 class="section-title">Kontak</h2>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-text">
+        <h3>Mari Berkolaborasi<br><span style="color:var(--gold)">Bersama</span></h3>
+        <p>Terbuka untuk diskusi teknologi pendidikan, inovasi digital sekolah, dan kolaborasi di bidang TIK.</p>
+        <div class="contact-items">
+          <div class="contact-item">
+            <div class="ci-icon">📧</div>
+            <div>
+              <div class="ci-label">Email</div>
+              <div class="ci-value">luis893@admin.sd.belajar.id</div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="ci-icon">🏫</div>
+            <div>
+              <div class="ci-label">Instansi</div>
+              <div class="ci-value">SD Negeri 001 Gunung Sari</div>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="ci-icon">📋</div>
+            <div>
+              <div class="ci-label">NIP</div>
+              <div class="ci-value">199609082025211001</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="contact-photo">
+        <img src="photo-formal.jpg" alt="Luis Ismail formal" />
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo"><span>LI</span> · 2026</div>
+  <p>Luis Ismail, S.Tr.Kom · NIP 199609082025211001</p>
+  <p>SD Negeri 001 Gunung Sari</p>
+</footer>
+
+<!-- ── CERT MODAL ── -->
+<div id="cert-modal">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeCertModal()">✕</button>
+    <h3 style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:12px;color:var(--paper)">Sertifikat Google for Education</h3>
+    <iframe src="sertifikat.pdf" title="Sertifikat Gemini Educator"></iframe>
+  </div>
+</div>
+
+<script>
+// ── CURSOR ──
+const cursor = document.getElementById('cursor');
+const dot = cursor.querySelector('.dot');
+const ring = cursor.querySelector('.ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+document.querySelectorAll('a, button, .btn, .cert-card').forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+});
+(function animCursor() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  dot.style.transform = `translate(${mx}px,${my}px) translate(-50%,-50%)`;
+  ring.style.transform = `translate(${rx}px,${ry}px) translate(-50%,-50%)`;
+  requestAnimationFrame(animCursor);
+})();
+
+// ── LOADER with PROGRESSIVE ASSET LOADING ──
+const loaderBar = document.getElementById('loader-bar');
+const loaderPct = document.getElementById('loader-pct');
+const loader = document.getElementById('loader');
+
+const assets = [
+  { src: 'photo.jpg', type: 'image' },
+  { src: 'photo-formal.jpg', type: 'image' },
+];
+
+let loaded = 0;
+const total = assets.length + 1; // +1 for WebGL init
+
+function updateProgress(n) {
+  const pct = Math.round((n / total) * 100);
+  loaderBar.style.width = pct + '%';
+  loaderPct.textContent = pct + '%';
+}
+
+function loadAssets() {
+  let done = 0;
+  assets.forEach(a => {
+    if (a.type === 'image') {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        done++;
+        updateProgress(done);
+        if (done >= assets.length) finishLoading();
+      };
+      img.src = a.src;
+    }
+  });
+}
+
+function finishLoading() {
+  setTimeout(() => {
+    updateProgress(total);
+    setTimeout(() => { loader.classList.add('hidden'); }, 500);
+  }, 400);
+}
+
+loadAssets();
+
+// ── WEBGL BACKGROUND ──
+(function initWebGL() {
+  const canvas = document.getElementById('gl-canvas');
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) { updateProgress(total); finishLoading(); return; }
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const VS = `
+    attribute vec2 a_pos;
+    void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+  `;
+  const FS = `
+    precision highp float;
+    uniform vec2 u_res;
+    uniform float u_time;
+    uniform vec2 u_mouse;
+
+    float hash(vec2 p) {
+      p = fract(p * vec2(234.34, 435.345));
+      p += dot(p, p + 34.23);
+      return fract(p.x * p.y);
+    }
+    float noise(vec2 p) {
+      vec2 i = floor(p); vec2 f = fract(p);
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_res;
+      vec2 aspect = vec2(u_res.x / u_res.y, 1.0);
+      vec2 p = (uv - 0.5) * aspect;
+      vec2 mouse = (u_mouse / u_res - 0.5) * aspect;
+
+      float t = u_time * 0.25;
+
+      // Layered noise field
+      float n1 = noise(p * 2.0 + vec2(t, t * 0.7));
+      float n2 = noise(p * 4.0 - vec2(t * 1.1, t * 0.5));
+      float n3 = noise(p * 8.0 + vec2(t * 0.4, -t));
+      float n = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
+
+      // Mouse influence
+      float mouseDist = length(p - mouse);
+      float mouseGlow = exp(-mouseDist * 4.0) * 0.35;
+
+      // Color palette — deep navy + gold + blue
+      vec3 col1 = vec3(0.04, 0.05, 0.09);   // deep ink
+      vec3 col2 = vec3(0.10, 0.13, 0.22);   // slate
+      vec3 col3 = vec3(0.22, 0.35, 0.60);   // accent blue
+      vec3 gold  = vec3(0.79, 0.66, 0.30);  // gold
+
+      vec3 color = mix(col1, col2, n);
+      color = mix(color, col3, n2 * 0.3);
+      color += gold * mouseGlow;
+
+      // Radial vignette
+      float vignette = 1.0 - length(p * 0.6);
+      color *= vignette * 0.9 + 0.1;
+
+      // Subtle grain
+      float grain = (hash(uv * 1234.5 + u_time) - 0.5) * 0.015;
+      color += grain;
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+
+  function compileShader(src, type) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compileShader(VS, gl.VERTEX_SHADER));
+  gl.attachShader(prog, compileShader(FS, gl.FRAGMENT_SHADER));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const posLoc = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes   = gl.getUniformLocation(prog, 'u_res');
+  const uTime  = gl.getUniformLocation(prog, 'u_time');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  let mouseX = 0, mouseY = 0;
+  document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+  let start = null;
+  function render(ts) {
+    if (!start) start = ts;
+    const t = (ts - start) / 1000;
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, t);
+    gl.uniform2f(uMouse, mouseX, canvas.height - mouseY);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+  // WebGL ready — mark as loaded
+  updateProgress(assets.length + 1);
+})();
+
+// ── SCROLL REVEAL ──
+const revealEls = document.querySelectorAll('.tl-item, .edu-card, .cert-card');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.15 });
+revealEls.forEach(el => io.observe(el));
+
+// ── CERT MODAL ──
+function openCertModal(e) {
+  e.preventDefault();
+  document.getElementById('cert-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeCertModal() {
+  document.getElementById('cert-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('cert-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeCertModal();
+});
+</script>
+</body>
+</html>
